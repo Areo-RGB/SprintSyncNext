@@ -22,6 +22,7 @@ export default function HostView({ onBack, myId }: HostViewProps) {
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   const [isCorrectingTime, setIsCorrectingTime] = useState(false);
   const [preciseTime, setPreciseTime] = useState<number | null>(null);
+  const [splitTimes, setSplitTimes] = useState<{ [key: string]: number }>({});
 
   const formattedTime = preciseTime !== null
     ? `${Math.floor(preciseTime / 1000)}.${Math.floor((preciseTime % 1000) / 10).toString().padStart(2, '0')}`
@@ -73,6 +74,11 @@ export default function HostView({ onBack, myId }: HostViewProps) {
       startTimer();
       // Update race status in Supabase
       await supabaseService.updateRaceStatus('racing', new Date());
+    } else if (raceState === 'RUNNING' && role === GateRole.SPLIT) {
+      // Record split time
+      const splitTime = Date.now() - startTime;
+      setSplitTimes(prev => ({ ...prev, [Date.now().toString()]: splitTime }));
+      // Optional: Broadcast split time to peers if needed
     } else if (raceState === 'RUNNING' && role === GateRole.FINISH) {
       stopTimer();
       setRaceState('FINISHED');
@@ -170,16 +176,16 @@ export default function HostView({ onBack, myId }: HostViewProps) {
             Peers: {peerService.peers.length}
           </div>
           <div className={`px-3 py-1 rounded text-sm font-mono flex items-center space-x-1 ${peerService.connectionStatus.includes('Error') || peerService.connectionStatus.includes('Disconnected')
-              ? 'bg-red-600'
-              : peerService.connectionStatus === 'Online'
-                ? 'bg-green-600'
-                : 'bg-yellow-600'
+            ? 'bg-red-600'
+            : peerService.connectionStatus === 'Online'
+              ? 'bg-green-600'
+              : 'bg-yellow-600'
             }`}>
             <div className={`w-2 h-2 rounded-full ${peerService.connectionStatus.includes('Error') || peerService.connectionStatus.includes('Disconnected')
-                ? 'bg-red-300'
-                : peerService.connectionStatus === 'Online'
-                  ? 'bg-green-300 animate-pulse'
-                  : 'bg-yellow-300'
+              ? 'bg-red-300'
+              : peerService.connectionStatus === 'Online'
+                ? 'bg-green-300 animate-pulse'
+                : 'bg-yellow-300'
               }`}></div>
             <span>{peerService.connectionStatus}</span>
           </div>
@@ -208,6 +214,21 @@ export default function HostView({ onBack, myId }: HostViewProps) {
             </div>
           )}
         </div>
+
+        {/* Split Times Display */}
+        {Object.entries(splitTimes).length > 0 && (
+          <div className="w-full max-w-md space-y-2">
+            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider text-center mb-2">Split Times</h3>
+            {Object.entries(splitTimes).sort((a, b) => parseInt(a[0]) - parseInt(b[0])).map(([key, time], index) => (
+              <div key={key} className="flex justify-between items-center bg-slate-800/50 px-4 py-2 rounded border border-slate-700">
+                <span className="text-slate-400 text-sm">Split {index + 1}</span>
+                <span className="font-mono text-xl font-bold text-yellow-400">
+                  {Math.floor(time / 1000)}.{Math.floor((time % 1000) / 10).toString().padStart(2, '0')}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Controls */}
         <div className="flex gap-4">
@@ -248,7 +269,8 @@ export default function HostView({ onBack, myId }: HostViewProps) {
             <div
               key={peer.id}
               className={`p-3 rounded-lg text-center ${peer.role === GateRole.START ? 'bg-green-700' :
-                  peer.role === GateRole.FINISH ? 'bg-blue-700' :
+                peer.role === GateRole.FINISH ? 'bg-blue-700' :
+                  peer.role === GateRole.SPLIT ? 'bg-yellow-700' :
                     'bg-slate-600'
                 }`}
             >
@@ -284,6 +306,19 @@ export default function HostView({ onBack, myId }: HostViewProps) {
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
             >
               Set Finish
+            </button>
+
+            <button
+              onClick={() => {
+                const firstUnassigned = peerService.peers.find(p => p.role === 'NONE');
+                if (firstUnassigned) {
+                  setRole(firstUnassigned.id, GateRole.SPLIT);
+                }
+              }}
+              disabled={!peerService.peers.some(p => p.role === 'NONE')}
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-600 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+            >
+              Set Split
             </button>
 
             <button

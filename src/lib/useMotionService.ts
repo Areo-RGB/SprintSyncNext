@@ -66,7 +66,7 @@ export const useMotionService = (config: Partial<MotionDetectionConfig> = {}) =>
       const sx = (video.videoWidth - motionConfig.roi.width) / 2;
       const sy = (video.videoHeight - motionConfig.roi.height) / 2;
 
-      // Draw only the ROI to the internal canvas
+      // Draw only ROI to internal canvas
       ctx.drawImage(video, sx, sy, motionConfig.roi.width, motionConfig.roi.height,
                    0, 0, motionConfig.roi.width, motionConfig.roi.height);
 

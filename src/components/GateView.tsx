@@ -138,26 +138,26 @@ export default function GateView({ onBack, myId, sessionCode }: GateViewProps) {
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Writing to database"></div>
             )}
             <div className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1 ${status === 'ARMED' ? 'bg-green-600' :
-                status === 'LOBBY' ? 'bg-yellow-600' :
-                  'bg-red-600'
+              status === 'LOBBY' ? 'bg-yellow-600' :
+                'bg-red-600'
               }`}>
               <div className={`w-2 h-2 rounded-full ${status === 'ARMED' ? 'bg-green-300 animate-pulse' :
-                  status === 'LOBBY' ? 'bg-yellow-300' :
-                    'bg-red-300'
+                status === 'LOBBY' ? 'bg-yellow-300' :
+                  'bg-red-300'
                 }`}></div>
               <span>{status}</span>
             </div>
             <div className={`px-2 py-1 rounded text-xs font-mono flex items-center space-x-1 ${peerService.connectionStatus.includes('Error') || peerService.connectionStatus.includes('Disconnected')
-                ? 'bg-red-600'
-                : peerService.connectionStatus === 'Online'
-                  ? 'bg-green-600'
-                  : 'bg-yellow-600'
+              ? 'bg-red-600'
+              : peerService.connectionStatus === 'Online'
+                ? 'bg-green-600'
+                : 'bg-yellow-600'
               }`}>
               <div className={`w-2 h-2 rounded-full ${peerService.connectionStatus.includes('Error') || peerService.connectionStatus.includes('Disconnected')
-                  ? 'bg-red-300'
-                  : peerService.connectionStatus === 'Online'
-                    ? 'bg-green-300 animate-pulse'
-                    : 'bg-yellow-300'
+                ? 'bg-red-300'
+                : peerService.connectionStatus === 'Online'
+                  ? 'bg-green-300 animate-pulse'
+                  : 'bg-yellow-300'
                 }`}></div>
               <span className="hidden sm:inline">{peerService.connectionStatus}</span>
             </div>
@@ -180,12 +180,12 @@ export default function GateView({ onBack, myId, sessionCode }: GateViewProps) {
           {/* Motion Detection Indicator */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
             <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center ${status === 'ARMED' ? 'bg-green-500/20 border-green-400 animate-pulse' :
-                status === 'TRIGGERED' ? 'bg-red-500/20 border-red-400' :
-                  'bg-slate-500/20 border-slate-400'
+              status === 'TRIGGERED' ? 'bg-red-500/20 border-red-400' :
+                'bg-slate-500/20 border-slate-400'
               }`}>
               <div className={`w-24 h-24 rounded-full border-2 ${status === 'ARMED' ? 'border-green-300 animate-ping' :
-                  status === 'TRIGGERED' ? 'border-red-300' :
-                    'border-slate-300'
+                status === 'TRIGGERED' ? 'border-red-300' :
+                  'border-slate-300'
                 }`} />
             </div>
           </div>
@@ -206,6 +206,16 @@ export default function GateView({ onBack, myId, sessionCode }: GateViewProps) {
               <p className="text-green-400 text-xs mt-1 animate-pulse">
                 Saving precise timing...
               </p>
+            )}
+
+            {/* Manual Trigger for Testing */}
+            {status === 'ARMED' && (
+              <button
+                onClick={handleMotionTrigger}
+                className="mt-4 px-6 py-2 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-full border border-red-400 backdrop-blur-sm transition"
+              >
+                MANUAL TRIGGER
+              </button>
             )}
           </div>
         </div>

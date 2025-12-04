@@ -32,3 +32,17 @@ SprintSync is a real-time distributed timing system for sprint racing. The appli
 - **Browser Support**: Modern browsers with WebRTC and camera API support
 - **Development Server**: `npm run dev` on localhost:3000
 - **Hot Reload**: Next.js development mode with fast refresh
+
+## Current Project Structure
+```
+SprintSyncNext/
+├── app/                 # Next.js app directory
+├── components/          # Reusable React components
+├── lib/                # Utility libraries
+├── public/             # Static assets
+├── types/              # TypeScript type definitions
+└── package.json        # Dependencies and scripts
+```
+
+## Last Updated
+December 4, 2025 - Project structure and overview updated for current development state
