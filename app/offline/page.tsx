@@ -72,7 +72,7 @@ export default function OfflinePage() {
           <p className="text-slate-500 text-sm">
             SprintSync automatically saves your work locally.
             <br />
-            Changes will sync when you're back online.
+            Changes will sync when you&apos;re back online.
           </p>
         </div>
       </div>

@@ -13,7 +13,7 @@ export interface ConnectedPeer {
   name?: string;
 }
 
-export const usePeerService = () => {
+export const export const usePeerService = () => {
   const [peer, setPeer] = useState<any>(null);
   const [myId, setMyId] = useState<string>('');
   const [isHost, setIsHost] = useState<boolean>(false);
@@ -27,6 +27,41 @@ export const usePeerService = () => {
     // Generate a 4-digit numerical string (1000-9999)
     return Math.floor(1000 + Math.random() * 9000).toString();
   }, []);
+
+  const handleMessage = useCallback((data: PeerData, senderId: string) => {
+    console.log('Received:', data, 'from', senderId);
+    setLatestMessage({ ...data }); // Trigger state update
+  }, []);
+
+  const sendToHost = useCallback((data: PeerData) => {
+    const conn = hostConnection;
+    if (conn) {
+      conn.send(data);
+    }
+  }, [hostConnection]);
+
+  const handleIncomingConnection = useCallback((conn: any, isHostMode: boolean) => {
+    if (isHostMode) {
+      conn.on('open', () => {
+        // Add to peers list temporarily, wait for handshake
+        setPeers(prev => [...prev, { id: conn.peer, conn, role: 'NONE', name: 'Unknown' }]);
+      });
+
+      conn.on('data', (data: any) => {
+        if (data.type === 'JOIN') {
+          setPeers(prev => prev.map(p =>
+            p.id === conn.peer ? { ...p, name: data.payload.name } : p
+          ));
+        } else {
+          handleMessage(data, conn.peer);
+        }
+      });
+
+      conn.on('close', () => {
+        setPeers(prev => prev.filter(p => p.id !== conn.peer));
+      });
+    }
+  }, [handleMessage]);
 
   const init = useCallback(async (isHostMode: boolean, id?: string): Promise<string> => {
     setIsHost(isHostMode);
@@ -57,30 +92,7 @@ export const usePeerService = () => {
         reject(err);
       });
     });
-  }, [generateShortId]);
-
-  const handleIncomingConnection = useCallback((conn: any, isHostMode: boolean) => {
-    if (isHostMode) {
-      conn.on('open', () => {
-        // Add to peers list temporarily, wait for handshake
-        setPeers(prev => [...prev, { id: conn.peer, conn, role: 'NONE', name: 'Unknown' }]);
-      });
-
-      conn.on('data', (data: any) => {
-        if (data.type === 'JOIN') {
-          setPeers(prev => prev.map(p =>
-            p.id === conn.peer ? { ...p, name: data.payload.name } : p
-          ));
-        } else {
-          handleMessage(data, conn.peer);
-        }
-      });
-
-      conn.on('close', () => {
-        setPeers(prev => prev.filter(p => p.id !== conn.peer));
-      });
-    }
-  }, []);
+  }, [generateShortId, handleIncomingConnection]);
 
   const connectToHost = useCallback((hostId: string, deviceName: string) => {
     if (!peer) return;
@@ -109,7 +121,7 @@ export const usePeerService = () => {
       console.error('Connection error', err);
       setConnectionStatus('Connection Error');
     });
-  }, [peer]);
+  }, [peer, sendToHost, handleMessage]);
 
   const assignRole = useCallback((peerId: string, role: 'START' | 'FINISH' | 'NONE') => {
     // Update local state
@@ -137,12 +149,9 @@ export const usePeerService = () => {
     });
   }, [peers]);
 
-  const sendToHost = useCallback((data: PeerData) => {
-    const conn = hostConnection;
-    if (conn) {
-      conn.send(data);
-    }
-  }, [hostConnection]);
+  const broadcastReset = useCallback(() => {
+    sendReset();
+  }, [sendReset]);
 
   const sendTrigger = useCallback((role: 'START' | 'FINISH', timestamp: number) => {
     const conn = hostConnection;
@@ -150,11 +159,6 @@ export const usePeerService = () => {
       conn.send({ type: 'TRIGGER', payload: { role, timestamp } });
     }
   }, [hostConnection]);
-
-  const handleMessage = useCallback((data: PeerData, senderId: string) => {
-    console.log('Received:', data, 'from', senderId);
-    setLatestMessage({ ...data }); // Trigger state update
-  }, []);
 
   const destroy = useCallback(() => {
     if (peer) {
@@ -182,7 +186,8 @@ export const usePeerService = () => {
     assignRole,
     broadcastState,
     sendReset,
+    broadcastReset,
     sendTrigger,
     destroy
   };
-};
+};;

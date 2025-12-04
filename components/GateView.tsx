@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePeerService } from '@/lib/usePeerService';
 import { useMotionService } from '@/lib/useMotionService';
 
@@ -24,6 +24,18 @@ export default function GateView({ onBack, myId }: GateViewProps) {
                    role === 'FINISH' ? 'Finish Gate (Sens 2)' :
                    'Unassigned Sensor';
 
+  const handleMotionTrigger = useCallback(() => {
+    setStatus('TRIGGERED');
+
+    // Vibrate device if possible
+    if ('vibrate' in navigator) {
+      navigator.vibrate(200);
+    }
+
+    // Send signal to host
+    peerService.sendTrigger(role as 'START' | 'FINISH', Date.now());
+  }, [peerService, role]);
+
   useEffect(() => {
     // Initialize peer service as client when component mounts
     const initializeClient = async () => {
@@ -40,7 +52,7 @@ export default function GateView({ onBack, myId }: GateViewProps) {
       motionService.stopCamera();
       peerService.destroy();
     };
-  }, []);
+  }, [motionService, peerService]);
 
   useEffect(() => {
     // Listen for peer messages
@@ -72,7 +84,7 @@ export default function GateView({ onBack, myId }: GateViewProps) {
     if (motionService.motionDetected && status === 'ARMED') {
       handleMotionTrigger();
     }
-  }, [motionService.motionDetected, status]);
+  }, [motionService.motionDetected, status, handleMotionTrigger]);
 
   useEffect(() => {
     // Start camera after component mounts
@@ -87,18 +99,6 @@ export default function GateView({ onBack, myId }: GateViewProps) {
 
     return () => clearTimeout(timeoutId);
   }, [motionService]);
-
-  const handleMotionTrigger = () => {
-    setStatus('TRIGGERED');
-
-    // Vibrate device if possible
-    if ('vibrate' in navigator) {
-      navigator.vibrate(200);
-    }
-
-    // Send signal to host
-    peerService.sendTrigger(role as 'START' | 'FINISH', Date.now());
-  };
 
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden flex flex-col">
@@ -122,6 +122,56 @@ export default function GateView({ onBack, myId }: GateViewProps) {
             status === 'LOBBY' ? 'bg-yellow-600' :
             'bg-red-600'
           }`}>
+            {status}
+          </div>
+        </div>
+      </div>
+
+      {/* Video Background */}
+      <div className="flex-1 relative">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
+        />
+
+        {/* Overlay UI */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30">
+          {/* Motion Detection Indicator */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+            <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center ${
+              status === 'ARMED' ? 'bg-green-500/20 border-green-400 animate-pulse' :
+              status === 'TRIGGERED' ? 'bg-red-500/20 border-red-400' :
+              'bg-slate-500/20 border-slate-400'
+            }`}>
+              <div className={`w-24 h-24 rounded-full border-2 ${
+                status === 'ARMED' ? 'border-green-300 animate-ping' :
+                status === 'TRIGGERED' ? 'border-red-300' :
+                'border-slate-300'
+              }`} />
+            </div>
+          </div>
+
+          {/* Status Text */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-white text-xl font-semibold mb-2">
+              {status === 'ARMED' ? 'Ready for Detection' :
+               status === 'TRIGGERED' ? 'Motion Detected!' :
+               'Waiting for Connection'}
+            </p>
+            {role !== 'NONE' && status !== 'TRIGGERED' && (
+              <p className="text-slate-300 text-sm">
+                Position camera and wait for motion
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}>
             {status}
           </div>
         </div>

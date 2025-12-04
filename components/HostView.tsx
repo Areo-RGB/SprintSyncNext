@@ -39,7 +39,7 @@ export default function HostView({ onBack, myId }: HostViewProps) {
       }
       peerService.destroy();
     };
-  }, []);
+  }, [peerService, timerInterval]);
 
   useEffect(() => {
     const msg = peerService.latestMessage;
@@ -48,7 +48,7 @@ export default function HostView({ onBack, myId }: HostViewProps) {
     if (msg.type === 'TRIGGER') {
       handleTrigger(msg.payload.role, msg.payload.timestamp);
     }
-  }, [peerService.latestMessage]);
+  }, [peerService.latestMessage, handleTrigger]);
 
   const startTimer = useCallback(() => {
     setRaceState('RUNNING');
@@ -145,6 +145,92 @@ export default function HostView({ onBack, myId }: HostViewProps) {
             <button
               onClick={armSystem}
               disabled={!canStart}
+              className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+            >
+              Arm System
+            </button>
+          )}
+          
+          {raceState === 'ARMED' && (
+            <button
+              onClick={cancelRace}
+              className="px-8 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+          
+          {raceState === 'RUNNING' && (
+            <button
+              onClick={cancelRace}
+              className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              Stop Race
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Peer Management */}
+      <div className="bg-slate-800 p-4 border-t border-slate-700">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          {peerService.peers.map((peer) => (
+            <div
+              key={peer.id}
+              className={`p-3 rounded-lg text-center ${
+                peer.role === 'START' ? 'bg-green-700' :
+                peer.role === 'FINISH' ? 'bg-blue-700' :
+                'bg-slate-600'
+              }`}
+            >
+              <div className="text-sm font-mono text-slate-300">{peer.id}</div>
+              <div className="text-xs text-slate-400">{peer.role}</div>
+            </div>
+          ))}
+        </div>
+        
+        {peerService.peers.length > 0 && (
+          <div className="mt-4 flex justify-center gap-2">
+            <button
+              onClick={() => {
+                const firstUnassigned = peerService.peers.find(p => p.role === 'NONE');
+                if (firstUnassigned) {
+                  setRole(firstUnassigned.id, 'START');
+                }
+              }}
+              disabled={!peerService.peers.some(p => p.role === 'NONE')}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+            >
+              Set Start
+            </button>
+            
+            <button
+              onClick={() => {
+                const firstUnassigned = peerService.peers.find(p => p.role === 'NONE');
+                if (firstUnassigned) {
+                  setRole(firstUnassigned.id, 'FINISH');
+                }
+              }}
+              disabled={!peerService.peers.some(p => p.role === 'NONE')}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+            >
+              Set Finish
+            </button>
+            
+            <button
+              onClick={() => {
+                peerService.broadcastReset();
+              }}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+            >
+              Reset All
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
               className="px-8 py-4 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-xl font-bold text-xl transition shadow-lg shadow-green-900/50"
             >
               ARM SYSTEM

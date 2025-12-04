@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export const useMotionService = () => {
+export const export const useMotionService = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -15,6 +15,17 @@ export const useMotionService = () => {
   const roiSize = 100; // 100x100 pixels
   const threshold = 50; // Pixel difference threshold
   const sensitivity = 20; // Number of pixels that need to change
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (animationFrameIdRef.current) {
+      cancelAnimationFrame(animationFrameIdRef.current);
+      animationFrameIdRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     // Initialize canvas
@@ -31,7 +42,7 @@ export const useMotionService = () => {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [roiSize, stopCamera]);
 
   const startCamera = useCallback(async (videoElement: HTMLVideoElement) => {
     try {
@@ -52,18 +63,7 @@ export const useMotionService = () => {
     } catch (err) {
       console.error('Error accessing camera:', err);
     }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (animationFrameIdRef.current) {
-      cancelAnimationFrame(animationFrameIdRef.current);
-      animationFrameIdRef.current = null;
-    }
-  }, []);
+  }, [detectMotion]);
 
   const armSystem = useCallback((armed: boolean) => {
     setIsArmed(armed);
@@ -137,4 +137,4 @@ export const useMotionService = () => {
     stopCamera,
     armSystem
   };
-};
+};;
